@@ -11,7 +11,6 @@
 class SimpleApp : public CefApp, public CefBrowserProcessHandler {
  public:
   SimpleApp();
-  HWND parent;
 
   // CefApp methods:
   virtual CefRefPtr<CefBrowserProcessHandler> GetBrowserProcessHandler()

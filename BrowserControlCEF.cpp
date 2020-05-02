@@ -1,8 +1,6 @@
 ﻿// BrowserControlCEF.cpp : アプリケーションのエントリ ポイントを定義します。
 //
 
-#define MAX_LOADSTRING 100
-
 #ifdef _DEBUG
 #pragma comment(lib, "lib\\Debug\\libcef.lib")
 #pragma comment(lib, "lib\\Debug\\libcef_dll_wrapper.lib")
@@ -17,8 +15,8 @@
 
 // グローバル変数:
 HINSTANCE hInst;                                // 現在のインターフェイス
-WCHAR szTitle[MAX_LOADSTRING];                  // タイトル バーのテキスト
-WCHAR szWindowClass[MAX_LOADSTRING];            // メイン ウィンドウ クラス名
+WCHAR szTitle[256];                  // タイトル バーのテキスト
+WCHAR szWindowClass[256];            // メイン ウィンドウ クラス名
 
 // このコード モジュールに含まれる関数の宣言を転送します:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -53,11 +51,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     // Specify CEF global settings here.
     CefSettings settings;
-
-#if !defined(CEF_USE_SANDBOX)
-    settings.no_sandbox = true;
-#endif
+    // マルチスレッドでCEFを実行する
     settings.multi_threaded_message_loop = true;
+    // デバッグ以外はログファイルを出力しない
+#ifndef _DEBUG
+    settings.log_severity = LOGSEVERITY_DISABLE;
+#endif
 
     // SimpleApp implements application-level callbacks for the browser process.
     // It will create the first browser instance in OnContextInitialized() after
@@ -67,8 +66,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     // Run the CEF message loop. This will block until CefQuitMessageLoop() is
     // called.
     // グローバル文字列を初期化する
-    LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-    LoadStringW(hInstance, IDC_BROWSERCONTROLCEF, szWindowClass, MAX_LOADSTRING);
+    LoadStringW(hInstance, IDS_APP_TITLE, szTitle, _countof(szTitle));
+    LoadStringW(hInstance, IDC_BROWSERCONTROLCEF, szWindowClass, _countof(szWindowClass));
     MyRegisterClass(hInstance);
 
     // アプリケーション初期化の実行:
@@ -110,14 +109,14 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 
     wcex.cbSize = sizeof(WNDCLASSEX);
 
-    wcex.style          = CS_HREDRAW | CS_VREDRAW;
+    wcex.style          = 0;
     wcex.lpfnWndProc    = WndProc;
     wcex.cbClsExtra     = 0;
     wcex.cbWndExtra     = 0;
     wcex.hInstance      = hInstance;
     wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_BROWSERCONTROLCEF));
     wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
-    wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
+    wcex.hbrBackground  = NULL;
     wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_BROWSERCONTROLCEF);
     wcex.lpszClassName  = szWindowClass;
     wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
@@ -139,7 +138,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance; // グローバル変数にインスタンス ハンドルを格納する
 
-   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
+   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
       CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
 
    if (!hWnd)
@@ -181,6 +180,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 break;
             default:
                 return DefWindowProc(hWnd, message, wParam, lParam);
+            }
+        }
+        break;
+    case WM_SIZE:
+        {
+            HWND hChild = GetWindow(hWnd, GW_CHILD);
+            if (hChild)
+            {
+                RECT rect;
+                GetClientRect(hWnd, &rect);
+                MoveWindow(hChild, 0, 0, rect.right, rect.bottom, FALSE);
             }
         }
         break;

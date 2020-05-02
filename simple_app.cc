@@ -2,7 +2,7 @@
 // reserved. Use of this source code is governed by a BSD-style license that
 // can be found in the LICENSE file.
 
-#include "tests/cefsimple/simple_app.h"
+#include "simple_app.h"
 
 #include <string>
 
@@ -11,7 +11,7 @@
 #include "include/views/cef_browser_view.h"
 #include "include/views/cef_window.h"
 #include "include/wrapper/cef_helpers.h"
-#include "tests/cefsimple/simple_handler.h"
+#include "simple_handler.h"
 #include "BrowserControlCEF.h"
 
 namespace {
